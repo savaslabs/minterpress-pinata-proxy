@@ -23,10 +23,11 @@ app.get("/", (req, res) => {
 });
 
 // handles minting
-app.post("/mint", upload.single("image"), async (req, res) => {
+app.post("/mint", upload.single("mintImage"), async (req, res) => {
+  console.log(req.body);
   const multerReq = req as any;
   if (!multerReq.file) {
-    res.status(500).json({ status: false, msg: "no file provided" });
+    res.status(200).json({ status: false, msg: "no file provided" });
   } else {
     const fileName = multerReq.file.filename;
 
@@ -39,9 +40,9 @@ app.post("/mint", upload.single("image"), async (req, res) => {
     const readableStreamForFile = fs.createReadStream(`./uploads/${fileName}`);
     const options: any = {
       pinataMetadata: {
-        name: req.body.title.replace(/\s/g, "-"),
+        name: req.body.mintTitle.replace(/\s/g, "-"),
         keyvalues: {
-          description: req.body.description,
+          description: req.body.mintDescription,
         },
       },
     };
@@ -54,8 +55,8 @@ app.post("/mint", upload.single("image"), async (req, res) => {
       fs.unlinkSync(`./uploads/${fileName}`);
       // pins metadata
       const metadata = {
-        name: req.body.title,
-        description: req.body.description,
+        name: req.body.mintTitle,
+        description: req.body.mintDescription,
         symbol: "TUT",
         artifactUri: `ipfs://${pinnedFile.IpfsHash}`,
         displayUri: `ipfs://${pinnedFile.IpfsHash}`,
