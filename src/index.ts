@@ -40,9 +40,9 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
     const readableStreamForFile = fs.createReadStream(`./uploads/${fileName}`);
     const options: any = {
       pinataMetadata: {
-        name: req.body.mintTitle.replace(/\s/g, "-"),
+        name: req.body.title.replace(/\s/g, "-"),
         keyvalues: {
-          description: req.body.mintDescription,
+          description: req.body.description,
         },
       },
     };
@@ -50,13 +50,16 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
       readableStreamForFile,
       options
     );
+    console.log("pinned successfully");
     if (pinnedFile.IpfsHash && pinnedFile.PinSize > 0) {
       // remove file from server
       fs.unlinkSync(`./uploads/${fileName}`);
       // pins metadata
       const metadata = {
-        name: req.body.mintTitle,
-        description: req.body.mintDescription,
+        name: req.body.title,
+        description: req.body.description,
+        tags: req.body.tags,
+        copyNumber: req.body.copyNumber,
         symbol: "TUT",
         artifactUri: `ipfs://${pinnedFile.IpfsHash}`,
         displayUri: `ipfs://${pinnedFile.IpfsHash}`,
@@ -66,6 +69,8 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
         is_transferable: true,
         shouldPreferSymbol: false,
       };
+
+      console.log("metadata", metadata);
 
       const pinnedMetadata = await pinata.pinJSONToIPFS(metadata, {
         pinataMetadata: {
