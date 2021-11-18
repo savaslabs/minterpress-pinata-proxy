@@ -27,6 +27,7 @@ app.get("/", (req, res) => {
 // handles minting
 app.post("/mint", upload.single("mintImage"), async (req, res) => {
   try {
+    console.log(req.body);
     const multerReq = req as any;
     const fileName = req.body.title.replace(/\s/g, "-");
     // tests Pinata authentication
