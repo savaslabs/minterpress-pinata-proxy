@@ -6,7 +6,7 @@ const multer = require("multer");
 const app = express();
 const upload = multer({ dest: "uploads/" });
 const port = process.env.NODE_ENV === "production" ? process.env.PORT : 8080; // default port to listen
-const request = require("request");
+const http = require("http");
 let pinata: any;
 
 const corsOptions = {
@@ -27,9 +27,6 @@ app.get("/", (req, res) => {
 // handles minting
 app.post("/mint", upload.single("mintImage"), async (req, res) => {
   try {
-    console.log(req.body);
-    const multerReq = req as any;
-    const fileName = req.body.title.replace(/\s/g, "-");
     // tests Pinata authentication
     pinata = pinataSDK(req.body.apiKey, req.body.apiSecret);
 
@@ -37,6 +34,16 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
       .testAuthentication()
       .catch((err: any) => res.status(500).json(JSON.stringify(err)));
 
+    // Format the URL.
+    let url = req.body.remoteFileUrl;
+    if (!/^https?:\/\//i.test(url)) {
+      url = "http:" + url;
+    }
+
+    // Get the file name and extension from the url.
+    const fileName = url.match(/([^\/]*)\/*$/)[1];
+
+    // Set file minting options.
     const options: any = {
       pinataMetadata: {
         name: fileName,
@@ -46,66 +53,74 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
       },
     };
 
-    let url = req.body.wpImageUrl;
-    if (!/^https?:\/\//i.test(url)) {
-      url = "http:" + url;
-    }
-    const response = await request(url).pipe(
-      fs.createWriteStream(`./uploads/${fileName}`)
-    );
-    const path = response.path;
-    const readableStreamForFile = fs.createReadStream(path);
+    // Set the temporary local file path.
+    const path = `./uploads/${fileName}`;
 
-    const pinnedFile = await pinata.pinFileToIPFS(
-      readableStreamForFile,
-      options
-    );
+    // Get the file from the remote.
+    http.get(url, function (response: any) {
+      if (response.statusCode === 200) {
+        // Write to local file system.
+        const file = fs.createWriteStream(path);
+        const stream = response.pipe(file);
+        stream.on("finish", () => {
+          // Create readableStream as required by Pinata.
+          const readableStreamForFile = fs.createReadStream(path);
 
-    const ipfsHash = pinnedFile.IpfsHash;
+          // Pin the file to IPFS.
+          pinata
+            .pinFileToIPFS(readableStreamForFile, options)
+            .then((pinnedFile: any) => {
+              // Remove file from local file system.
+              fs.unlinkSync(path);
 
-    if (ipfsHash) {
-      // remove file from server
-      if (multerReq.file) fs.unlinkSync(path);
-      // pins metadata
-      const metadata = {
-        name: req.body.title,
-        description: req.body.description,
-        tags: req.body.tags,
-        copyNumber: req.body.copyNumber,
-        symbol: "TUT",
-        artifactUri: `ipfs://${ipfsHash}`,
-        displayUri: `ipfs://${ipfsHash}`,
-        creators: [req.body.creator],
-        decimals: 0,
-        thumbnailUri: "https://tezostaquito.io/img/favicon.png",
-        is_transferable: true,
-        shouldPreferSymbol: false,
-      };
+              const ipfsHash = pinnedFile.IpfsHash;
 
-      console.log("metadata", metadata);
+              if (ipfsHash) {
+                // Pin the metadata.
+                const metadata = {
+                  name: req.body.title,
+                  description: req.body.description,
+                  tags: req.body.tags,
+                  copyNumber: req.body.copyNumber,
+                  symbol: "TUT",
+                  artifactUri: `ipfs://${ipfsHash}`,
+                  displayUri: `ipfs://${ipfsHash}`,
+                  creators: [req.body.creator],
+                  decimals: 0,
+                  thumbnailUri: "https://tezostaquito.io/img/favicon.png",
+                  is_transferable: true,
+                  shouldPreferSymbol: false,
+                };
 
-      const pinnedMetadata = await pinata.pinJSONToIPFS(metadata, {
-        pinataMetadata: {
-          name: "TUT-metadata",
-        },
-      });
+                console.log("metadata", metadata);
 
-      if (pinnedMetadata.IpfsHash && pinnedMetadata.PinSize > 0) {
-        res.status(200).json({
-          status: true,
-          msg: {
-            imageHash: ipfsHash,
-            metadataHash: pinnedMetadata.IpfsHash,
-          },
+                pinata
+                  .pinJSONToIPFS(metadata, {
+                    pinataMetadata: {
+                      name: "TUT-metadata",
+                    },
+                  })
+                  .then((pinnedMetadata: any) => {
+                    if (pinnedMetadata.IpfsHash && pinnedMetadata.PinSize > 0) {
+                      res.status(200).json({
+                        status: true,
+                        msg: {
+                          imageHash: ipfsHash,
+                          metadataHash: pinnedMetadata.IpfsHash,
+                        },
+                      });
+                    } else {
+                      res.status(500).json({
+                        status: false,
+                        msg: "metadata were not pinned",
+                      });
+                    }
+                  });
+              }
+            });
         });
-      } else {
-        res
-          .status(500)
-          .json({ status: false, msg: "metadata were not pinned" });
       }
-    } else {
-      res.status(500).json({ status: false, msg: "file was not pinned" });
-    }
+    });
   } catch (err) {
     res.status(500).json({ status: false, msg: err });
   }
@@ -115,3 +130,4 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
 app.listen(port, () => {
   console.log(`server started at http://localhost:${port}`);
 });
+
