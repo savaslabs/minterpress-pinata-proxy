@@ -71,7 +71,12 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
             .pinFileToIPFS(readableStreamForFile, options)
             .then((pinnedFile: any) => {
               // Remove file from local file system.
-              fs.unlinkSync(path);
+              try {
+                fs.unlinkSync(path);
+              } catch (err) {
+                // Fail gracefully.
+              }
+              
 
               const ipfsHash = pinnedFile.IpfsHash;
 
