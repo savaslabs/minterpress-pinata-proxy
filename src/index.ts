@@ -26,6 +26,7 @@ app.get("/", (req, res) => {
 
 // handles minting
 app.post("/mint", upload.single("mintImage"), async (req, res) => {
+  console.log("Testing Pinata auth.");
   try {
     // tests Pinata authentication
     pinata = pinataSDK(req.body.apiKey, req.body.apiSecret);
@@ -42,6 +43,8 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
 
     // Get the file name and extension from the url.
     const fileName = url.match(/([^\/]*)\/*$/)[1];
+    // Get the file extension from the file name.
+    const extension = fileName.split(".").pop();
 
     // Set file minting options.
     const options: any = {
@@ -56,6 +59,7 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
     // Set the temporary local file path.
     const path = `./uploads/${fileName}`;
 
+    console.log("Writing file.");
     // Get the file from the remote.
     http.get(url, function (response: any) {
       if (response.statusCode === 200) {
@@ -66,6 +70,7 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
           // Create readableStream as required by Pinata.
           const readableStreamForFile = fs.createReadStream(path);
 
+          console.log("Pinning file.");
           // Pin the file to IPFS.
           pinata
             .pinFileToIPFS(readableStreamForFile, options)
@@ -76,7 +81,6 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
               } catch (err) {
                 // Fail gracefully.
               }
-              
 
               const ipfsHash = pinnedFile.IpfsHash;
 
@@ -85,19 +89,22 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
                 const metadata = {
                   name: req.body.title,
                   description: req.body.description,
-                  tags: req.body.tags,
-                  copyNumber: req.body.copyNumber,
+                  tags: req.body.tags.split(","),
+                  edition: req.body.edition,
+                  publishers: [req.body.publisher],
                   symbol: "TUT",
                   artifactUri: `ipfs://${ipfsHash}`,
                   displayUri: `ipfs://${ipfsHash}`,
+                  type: extension,
+                  minter: req.body.creator,
                   creators: [req.body.creator],
                   decimals: 0,
                   thumbnailUri: "https://tezostaquito.io/img/favicon.png",
-                  is_transferable: true,
+                  isTransferable: true,
                   shouldPreferSymbol: false,
                 };
 
-                console.log("metadata", metadata);
+                console.log("Pinning metadata:", metadata);
 
                 pinata
                   .pinJSONToIPFS(metadata, {
@@ -107,6 +114,7 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
                   })
                   .then((pinnedMetadata: any) => {
                     if (pinnedMetadata.IpfsHash && pinnedMetadata.PinSize > 0) {
+                      console.log("Success!");
                       res.status(200).json({
                         status: true,
                         msg: {
@@ -115,6 +123,7 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
                         },
                       });
                     } else {
+                      console.error("Error pinning.");
                       res.status(500).json({
                         status: false,
                         msg: "metadata were not pinned",
