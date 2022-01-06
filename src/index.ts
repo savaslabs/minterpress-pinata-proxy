@@ -31,9 +31,12 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
     // tests Pinata authentication
     pinata = pinataSDK(req.body.apiKey, req.body.apiSecret);
 
-    await pinata
-      .testAuthentication()
-      .catch((err: any) => res.status(500).json(JSON.stringify(err)));
+    const authenticated = await pinata.testAuthentication();
+
+    if (!authenticated) {
+      console.error('Invalid Pinata credentials.')
+      return res.send({status: 403, msg: 'Invalid Pinata credentials'});
+    }
 
     // Format the URL.
     let url = req.body.remoteFileUrl;
@@ -79,7 +82,7 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
               try {
                 fs.unlinkSync(path);
               } catch (err) {
-                // Fail gracefully.
+                console.error(err)
               }
 
               const ipfsHash = pinnedFile.IpfsHash;
@@ -115,28 +118,34 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
                   .then((pinnedMetadata: any) => {
                     if (pinnedMetadata.IpfsHash && pinnedMetadata.PinSize > 0) {
                       console.log("Success!");
-                      res.status(200).json({
+                      res.send({
                         status: true,
                         msg: {
                           imageHash: ipfsHash,
                           metadataHash: pinnedMetadata.IpfsHash,
                         },
                       });
+                      return;
                     } else {
                       console.error("Error pinning.");
-                      res.status(500).json({
-                        status: false,
-                        msg: "metadata were not pinned",
-                      });
+                      return res.send({
+                          status: false,
+                          msg: "metadata were not pinned",
+                        });
+                      
                     }
                   });
               }
+            })
+            .catch((err: any) => {
+              return res.send({ status: false, msg: JSON.stringify(err) });
+              
             });
         });
       }
     });
   } catch (err) {
-    res.status(500).json({ status: false, msg: err });
+    return res.send({ status: false, msg: err });
   }
 });
 
