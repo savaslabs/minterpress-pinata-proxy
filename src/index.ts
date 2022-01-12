@@ -4,7 +4,7 @@ import fs from "fs";
 const cors = require("cors");
 const multer = require("multer");
 const app = express();
-const upload = multer({ dest: "uploads/" });
+const upload = multer();
 const port = process.env.NODE_ENV === "production" ? process.env.PORT : 8080; // default port to listen
 const http = require("http");
 let pinata: any;
@@ -24,8 +24,8 @@ app.get("/", (req, res) => {
   res.send("Hello developers!");
 });
 
-// handles minting
-app.post("/mint", upload.single("mintImage"), async (req, res) => {
+// handles pinning
+app.post("/pin", upload.none(), async (req, res) => {
   console.log("Testing Pinata auth.");
   try {
     // tests Pinata authentication
@@ -34,8 +34,8 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
     const authenticated = await pinata.testAuthentication();
 
     if (!authenticated) {
-      console.error('Invalid Pinata credentials.')
-      return res.send({status: 403, msg: 'Invalid Pinata credentials'});
+      console.error("Invalid Pinata credentials.");
+      return res.send({ status: 403, msg: "Invalid Pinata credentials" });
     }
 
     // Format the URL.
@@ -82,7 +82,7 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
               try {
                 fs.unlinkSync(path);
               } catch (err) {
-                console.error(err)
+                console.error(err);
               }
 
               const ipfsHash = pinnedFile.IpfsHash;
@@ -129,17 +129,15 @@ app.post("/mint", upload.single("mintImage"), async (req, res) => {
                     } else {
                       console.error("Error pinning.");
                       return res.send({
-                          status: false,
-                          msg: "metadata were not pinned",
-                        });
-                      
+                        status: false,
+                        msg: "metadata were not pinned",
+                      });
                     }
                   });
               }
             })
             .catch((err: any) => {
               return res.send({ status: false, msg: JSON.stringify(err) });
-              
             });
         });
       }
