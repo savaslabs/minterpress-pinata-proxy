@@ -1,6 +1,9 @@
-import express from "express";
+import * as express from "express";
+import { Request, Response } from "express";
 import pinataSDK from "@pinata/sdk";
-import fs from "fs";
+import * as fs from "fs";
+import * as types from "./types";
+import { Stream } from "stream";
 const cors = require("cors");
 const multer = require("multer");
 const app = express();
@@ -20,12 +23,12 @@ app.use(
 );
 
 // defines a route handler for the default home page
-app.get("/", (req, res) => {
+app.get("/", (req: Request, res: Response) => {
   res.send("Hello developers!");
 });
 
 // handles pinning
-app.post("/pin", upload.none(), async (req, res) => {
+app.post("/pin", upload.none(), async (req: Request, res: Response) => {
   console.log("Testing Pinata auth.");
   try {
     // tests Pinata authentication
@@ -45,9 +48,9 @@ app.post("/pin", upload.none(), async (req, res) => {
     }
 
     // Get the file name and extension from the url.
-    const fileName = url.match(/([^\/]*)\/*$/)[1];
+    const fileName: string = url.match(/([^\/]*)\/*$/)[1];
     // Get the file extension from the file name.
-    const extension = fileName.split(".").pop();
+    const extension: string = fileName.split(".").pop();
 
     // Set file minting options.
     const options: any = {
@@ -64,14 +67,14 @@ app.post("/pin", upload.none(), async (req, res) => {
 
     console.log("Writing file.");
     // Get the file from the remote.
-    http.get(url, function (response: any) {
+    http.get(url, function (response: Response) {
       if (response.statusCode === 200) {
         // Write to local file system.
         const file = fs.createWriteStream(path);
         const stream = response.pipe(file);
         stream.on("finish", () => {
           // Create readableStream as required by Pinata.
-          const readableStreamForFile = fs.createReadStream(path);
+          const readableStreamForFile: Stream = fs.createReadStream(path);
 
           console.log("Pinning file.");
           // Pin the file to IPFS.
@@ -85,15 +88,14 @@ app.post("/pin", upload.none(), async (req, res) => {
                 console.error(err);
               }
 
-              const ipfsHash = pinnedFile.IpfsHash;
+              const ipfsHash: string = pinnedFile.IpfsHash;
 
               if (ipfsHash) {
                 // Pin the metadata.
-                const metadata = {
+                const metadata: types.tzip21_metadata = {
                   name: req.body.title,
                   description: req.body.description,
                   tags: req.body.tags.split(","),
-                  edition: req.body.edition,
                   publishers: [req.body.publisher],
                   symbol: "TUT",
                   artifactUri: `ipfs://${ipfsHash}`,
@@ -105,6 +107,10 @@ app.post("/pin", upload.none(), async (req, res) => {
                   thumbnailUri: "https://tezostaquito.io/img/favicon.png",
                   isTransferable: true,
                   shouldPreferSymbol: false,
+                  attributes: [
+                    { name: "edition", value: req.body.edition },
+                    req.body.attributes,
+                  ],
                 };
 
                 console.log("Pinning metadata:", metadata);
@@ -118,13 +124,14 @@ app.post("/pin", upload.none(), async (req, res) => {
                   .then((pinnedMetadata: any) => {
                     if (pinnedMetadata.IpfsHash && pinnedMetadata.PinSize > 0) {
                       console.log("Success!");
-                      res.send({
+                      const response: types.MinterpressResponse = {
                         status: true,
                         msg: {
                           imageHash: ipfsHash,
                           metadataHash: pinnedMetadata.IpfsHash,
                         },
-                      });
+                      };
+                      res.send(response);
                       return;
                     } else {
                       console.error("Error pinning.");
@@ -137,13 +144,21 @@ app.post("/pin", upload.none(), async (req, res) => {
               }
             })
             .catch((err: any) => {
-              return res.send({ status: false, msg: JSON.stringify(err) });
+              const response: types.MinterpressResponse = {
+                status: false,
+                msg: JSON.stringify(err),
+              };
+              return res.send(response);
             });
         });
       }
     });
   } catch (err) {
-    return res.send({ status: false, msg: err });
+    const response: types.MinterpressResponse = {
+      status: false,
+      msg: JSON.stringify(err),
+    };
+    return res.send(response);
   }
 });
 
@@ -151,4 +166,3 @@ app.post("/pin", upload.none(), async (req, res) => {
 app.listen(port, () => {
   console.log(`server started at http://localhost:${port}`);
 });
-

@@ -1,7 +1,7 @@
 {
-  "name": "nft-taquito-pinata-tutorial",
+  "name": "minterpress-pinata-proxy",
   "version": "1.0.0",
-  "description": "A tutorial about using Taquito and Pinata to mint NFTs on Tezos",
+  "description": "An Express Proxy for Pinata, for use with non-Node backends.",
   "main": "dist/index.js",
   "scripts": {
     "build": "tsc",
@@ -12,7 +12,7 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "deploy": "git add . && git commit -m Heroku && git push heroku main"
   },
-  "author": "Claude Barde",
+  "author": "Blokhaus",
   "license": "ISC",
   "engines": {
     "node": "14.15.5"
