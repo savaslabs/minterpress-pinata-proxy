@@ -1,13 +1,79 @@
 # Minterpress Pinata Proxy
 
+Minterpress Pinata Proxy is an Express app for interfacing with the [Pinata Node SDK](https://docs.pinata.cloud/pinata-node-sdk). [Pinata](https://www.pinata.cloud/) is a cloud service for storing and managing NFT media, and the Pinata Node SDK provides the quickest / easiest path for using Pinata to pin media and metadata to IPFS for minting NFTs.
+
+The goal of this app is to provide a utility for apps without Node backends to utilize Pinata for pinning media to IPFS. This app is based heavily on the approach described by [@claudebarde](https://github.com/claudebarde) in the article [How to mint NFTs on Tezos using Taquito and Pinata](https://medium.com/ecad-labs-inc/how-to-mint-nfts-on-tezos-using-taquito-and-pinata-15a407078495).
+
+## Installation
+
 ```
 npm install
+```
+
+## Local Development
+
+```
 npm run dev
 ```
 
-- Pinata: you will need an account on [Pinata](https://pinata.cloud/pinmanager) and [API keys](https://pinata.cloud/keys). Keep your API keys secret!
+starts the server on http://localhost:8080 in develop mode with hot reloading.
+
+```
+npm run start
+```
+starts the server on http://localhost:8080 in build mode without hot reloading.
+
+## API Usage
+
+### Pin
+
+- URL: 
+    - `/pin`
+- Method:
+    - `POST`
+- URL Params:
+    - none
+- Data Params:
+    This app uses [multer](https://www.npmjs.com/package/multer), an Express middleware for handling `multipart/form-data`. The expected [FormData](https://developer.mozilla.org/en-US/docs/Web/API/FormData) keys are:
+
+    - For Pinata Authentication:
+        - `apiKey` - your Pinata API key string generated at https://app.pinata.cloud/keys
+        - `apiSecret`- your Pinata API secret string generated at https://app.pinata.cloud/keys
+    - For passing file to be pinned:
+        - `remoteFileUrl` - the absolute URL to the temporary location of the file to be pinned. We pass the URL instead of uploading the file in order to allow using 3rd-party file upload utilitie such as the WordPress's native media upload functionality, Uppy, FilePond, or any other upload utility.
+    - For pinning metadata that will be formatted to match [TZIP-21 protocol](https://tzip.tezosagora.org/proposal/tzip-21/):
+        - `name` - string
+        - `description` - string
+        - `tags` - string of tags separated by commas
+        - `publisher` - string
+        - `creator` - string the wallet address of the creator
+        - `attributes` - { name: string; value: string }[]
+- Success Response:
+    ```
+    {
+        status: true,
+        msg: {
+            imageHash: <imageHash: string>,
+            metadataHash: <metadataHash: string>,
+        },
+    }
+    ```
+- Error Response:
+    ```
+    {
+        status: false,
+        msg: <error message>,
+    }
+    ```
 
 ## Deployment
 
-`git remote add heroku https://git.heroku.com/minterpress-pinata-proxy.git`
-`git push -f heroku HEAD:master`
+The application includes a Procfile and is ready to be deployed to Heroku. To deploy to Heroku, follow the instructions at [Creating Apps from the CLI](https://devcenter.heroku.com/articles/creating-apps).
+
+Prior to deploying, update the origin in the corsOptions to only allow requests from your client app.
+
+## Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## License
+[MIT](https://choosealicense.com/licenses/mit/)
