@@ -40,7 +40,7 @@ starts the server on http://localhost:8080 in build mode without hot reloading.
         - `apiKey` - your Pinata API key string generated at https://app.pinata.cloud/keys
         - `apiSecret`- your Pinata API secret string generated at https://app.pinata.cloud/keys
     - For passing file to be pinned:
-        - `remoteFileUrl` - the absolute URL to the temporary location of the file to be pinned. We pass the URL instead of uploading the file in order to allow using 3rd-party file upload utilitie such as the WordPress's native media upload functionality, Uppy, FilePond, or any other upload utility.
+        - `remoteFileUrl` - the absolute URL to the temporary location of the file to be pinned. We pass the URL instead of uploading the file in order to allow using 3rd-party file upload utilities such as the WordPress's native media upload functionality, Uppy, FilePond, or any other upload utility.
     - For pinning metadata that will be formatted to match [TZIP-21 protocol](https://tzip.tezosagora.org/proposal/tzip-21/):
         - `name` - string
         - `description` - string
