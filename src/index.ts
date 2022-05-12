@@ -1,6 +1,6 @@
 import * as express from "express";
 import { Request, Response } from "express";
-import pinataSDK from "@pinata/sdk";
+const pinataSDK = require("@pinata/sdk");
 import * as fs from "fs";
 import * as types from "./types";
 import { Stream } from "stream";
