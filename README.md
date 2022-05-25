@@ -108,7 +108,7 @@ env=dev
 basePluginUrl=http://104.131.119.16:8000
 ```
 
-Ideally, in production this should would be an HTTPS connection:
+Ideally, in production this should be an HTTPS connection through port 80:
 
 ```
 env=prod
