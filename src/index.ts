@@ -1,6 +1,5 @@
 import * as express from "express";
 import { Request, Response } from "express";
-import pinataSDK from "@pinata/sdk";
 import * as fs from "fs";
 import * as types from "./types";
 import { Stream } from "stream";
@@ -10,11 +9,17 @@ const app = express();
 const upload = multer();
 const port = process.env.NODE_ENV === "production" ? process.env.PORT : 8080; // default port to listen
 const http = require("http");
+const pinataSDK = require("@pinata/sdk");
+const path = require('path');
+
+// Load .env file
+require("dotenv").config({path: path.resolve(__dirname, '../.env')});
+
 let pinata: any;
 
 const corsOptions = {
   optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-  origin: "*",
+  origin: process.env.pluginBaseUrl,
 };
 app.use(cors(corsOptions));
 app.use(express.json({ limit: "50mb" }));
@@ -30,7 +35,8 @@ app.get("/", (req: Request, res: Response) => {
 // handles pinning
 app.post("/pin", upload.none(), async (req: Request, res: Response) => {
   console.log("Testing Pinata auth.");
-  try {
+  /* try { */
+    console.log(process.env.pluginBaseUrl)
     // tests Pinata authentication
     pinata = pinataSDK(req.body.apiKey, req.body.apiSecret);
 
@@ -153,13 +159,13 @@ app.post("/pin", upload.none(), async (req: Request, res: Response) => {
         });
       }
     });
-  } catch (err) {
+  /* } catch (err) {
     const response: types.MinterpressResponse = {
       status: false,
       msg: JSON.stringify(err),
     };
     return res.send(response);
-  }
+  } */
 });
 
 // starts the Express server

@@ -10,7 +10,13 @@ The goal of this app is to provide a utility for apps without Node backends to u
 npm install
 ```
 
-## Local Development
+Copy the sample environment file to `.env`
+
+```
+cp .env.sample .env
+```
+
+## Development & Maintenance
 
 ```
 npm run dev
@@ -70,7 +76,44 @@ starts the server on http://localhost:8080 in build mode without hot reloading.
 
 The application includes a Procfile and is ready to be deployed to Heroku. To deploy to Heroku, follow the instructions at [Creating Apps from the CLI](https://devcenter.heroku.com/articles/creating-apps).
 
-Prior to deploying, update the origin in the corsOptions to only allow requests from your client app.
+***IMPORTANT: Prior to deploying, the 'pluginBaseUrl' variable in the .env file most be updated with the URL plugin will be hosted / making requests from. By default, it will be set to a wildcard * allowing access from anywhere***
+
+### Sample valid .env file values (Make sure URLs DO NOT end in a trailing slash '/')
+
+Wildcard Example (Default):
+
+```
+env=local
+basePluginUrl=*
+```
+
+If the port is not 80, the port should be specified:
+
+```
+env=local
+basePluginUrl=http://localhost:3000
+```
+
+Using a test proxy that's not local running port 80:
+
+```
+env=dev
+basePluginUrl=http://104.131.119.16
+```
+
+Using a test proxy that's not local running port 8000:
+
+```
+env=dev
+basePluginUrl=http://104.131.119.16:8000
+```
+
+Ideally, in production this should would be an HTTPS connection:
+
+```
+env=prod
+basePluginUrl=https://mymintingwebsite.com
+```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
