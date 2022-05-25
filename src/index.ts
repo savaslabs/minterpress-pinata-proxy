@@ -35,7 +35,7 @@ app.get("/", (req: Request, res: Response) => {
 // handles pinning
 app.post("/pin", upload.none(), async (req: Request, res: Response) => {
   console.log("Testing Pinata auth.");
-  /* try { */
+  try {
     console.log(process.env.pluginBaseUrl)
     // tests Pinata authentication
     pinata = pinataSDK(req.body.apiKey, req.body.apiSecret);
@@ -159,13 +159,13 @@ app.post("/pin", upload.none(), async (req: Request, res: Response) => {
         });
       }
     });
-  /* } catch (err) {
+  } catch (err) {
     const response: types.MinterpressResponse = {
       status: false,
       msg: JSON.stringify(err),
     };
     return res.send(response);
-  } */
+  }
 });
 
 // starts the Express server
