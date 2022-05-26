@@ -6,9 +6,10 @@ import { Stream } from "stream";
 const cors = require("cors");
 const multer = require("multer");
 const app = express();
-const upload = multer();
+const upload = multer({ dest: "uploads/" });
 const port = process.env.NODE_ENV === "production" ? process.env.PORT : 8080; // default port to listen
 const http = require("http");
+const https = require("https");
 const pinataSDK = require("@pinata/sdk");
 const path = require('path');
 
@@ -36,7 +37,6 @@ app.get("/", (req: Request, res: Response) => {
 app.post("/pin", upload.none(), async (req: Request, res: Response) => {
   console.log("Testing Pinata auth.");
   try {
-    console.log(process.env.pluginBaseUrl)
     // tests Pinata authentication
     pinata = pinataSDK(req.body.apiKey, req.body.apiSecret);
 
@@ -70,10 +70,14 @@ app.post("/pin", upload.none(), async (req: Request, res: Response) => {
 
     // Set the temporary local file path.
     const path = `./uploads/${fileName}`;
-
     console.log("Writing file.");
+
+    // Select the handler based on protocol
+    let httpHandler: any;
+    httpHandler = url.match("^https://") ? https : http;
+
     // Get the file from the remote.
-    http.get(url, function (response: Response) {
+    httpHandler.get(url, function (response: Response) {
       if (response.statusCode === 200) {
         // Write to local file system.
         const file = fs.createWriteStream(path);
