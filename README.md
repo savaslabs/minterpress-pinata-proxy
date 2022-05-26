@@ -10,7 +10,13 @@ The goal of this app is to provide a utility for apps without Node backends to u
 npm install
 ```
 
-## Local Development
+Copy the sample environment file to `.env`
+
+```
+cp .env.sample .env
+```
+
+## Development & Maintenance
 
 ```
 npm run dev
@@ -40,7 +46,7 @@ starts the server on http://localhost:8080 in build mode without hot reloading.
         - `apiKey` - your Pinata API key string generated at https://app.pinata.cloud/keys
         - `apiSecret`- your Pinata API secret string generated at https://app.pinata.cloud/keys
     - For passing file to be pinned:
-        - `remoteFileUrl` - the absolute URL to the temporary location of the file to be pinned. We pass the URL instead of uploading the file in order to allow using 3rd-party file upload utilitie such as the WordPress's native media upload functionality, Uppy, FilePond, or any other upload utility.
+        - `remoteFileUrl` - the absolute URL to the temporary location of the file to be pinned. We pass the URL instead of uploading the file in order to allow using 3rd-party file upload utilities such as the WordPress's native media upload functionality, Uppy, FilePond, or any other upload utility.
     - For pinning metadata that will be formatted to match [TZIP-21 protocol](https://tzip.tezosagora.org/proposal/tzip-21/):
         - `name` - string
         - `description` - string
@@ -70,7 +76,39 @@ starts the server on http://localhost:8080 in build mode without hot reloading.
 
 The application includes a Procfile and is ready to be deployed to Heroku. To deploy to Heroku, follow the instructions at [Creating Apps from the CLI](https://devcenter.heroku.com/articles/creating-apps).
 
-Prior to deploying, update the origin in the corsOptions to only allow requests from your client app.
+--- 
+
+## Sample valid .env file values (Make sure URLs DO NOT end in a trailing slash '/')
+
+Wildcard Example (Default):
+
+```
+basePluginUrl=*
+```
+
+If the port is not 80, the port should be specified:
+
+```
+basePluginUrl=http://localhost:3000
+```
+
+Using a test proxy that's not local running port 80:
+
+```
+basePluginUrl=http://104.131.119.16
+```
+
+Using a test proxy that's not local running port 8000:
+
+```
+basePluginUrl=http://104.131.119.16:8000
+```
+
+Ideally, in production this should be an HTTPS connection through port 80:
+
+```
+basePluginUrl=https://mymintingwebsite.com
+```
 
 ## Contributing
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
